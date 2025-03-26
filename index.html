@@ -1,0 +1,1957 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TypeMaster Pro | Advanced Typing Tutor</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6c5ce7;
+            --primary-dark: #5649c0;
+            --secondary: #a29bfe;
+            --accent: #74b9ff;
+            --light: #f8f9fa;
+            --dark: #2d3436;
+            --card: #ffffff;
+            --correct: #00b894;
+            --incorrect: #d63031;
+            --warning: #fdcb6e;
+            --background: #dfe6e9;
+            --text: #2d3436;
+            --text-light: #636e72;
+            --shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 15px 30px rgba(0, 0, 0, 0.15);
+            --transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            --border-radius: 16px;
+            --border-radius-sm: 8px;
+        }
+
+        .dark-mode {
+            --primary: #a29bfe;
+            --primary-dark: #6c5ce7;
+            --secondary: #74b9ff;
+            --accent: #0984e3;
+            --light: #2d3436;
+            --dark: #f8f9fa;
+            --card: #1e272e;
+            --background: #0c0f12;
+            --text: #dfe6e9;
+            --text-light: #b2bec3;
+            --shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+            --shadow-lg: 0 15px 30px rgba(0, 0, 0, 0.4);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--background);
+            color: var(--text);
+            min-height: 100vh;
+            display: grid;
+            grid-template-columns: 1fr 320px;
+            grid-template-rows: auto 1fr auto;
+            grid-template-areas:
+                "header sidebar"
+                "main sidebar"
+                "keyboard sidebar";
+            gap: 1.5rem;
+            padding: 1.5rem;
+            transition: var(--transition);
+            line-height: 1.6;
+        }
+
+        header {
+            grid-area: header;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.5rem 2rem;
+            background-color: var(--card);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+
+        header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(to bottom, var(--primary), var(--accent));
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            font-weight: 700;
+            font-size: 1.5rem;
+            color: var(--primary);
+            z-index: 1;
+        }
+
+        .logo-icon {
+            width: 2.5rem;
+            height: 2.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            color: white;
+            border-radius: var(--border-radius-sm);
+            font-size: 1.25rem;
+            box-shadow: 0 4px 12px rgba(108, 92, 231, 0.3);
+        }
+
+        .stats {
+            display: flex;
+            gap: 2rem;
+            z-index: 1;
+        }
+
+        .stat {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 6rem;
+            background-color: var(--light);
+            padding: 0.75rem 1rem;
+            border-radius: var(--border-radius-sm);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .stat-value {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--primary);
+            transition: var(--transition);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .stat-label {
+            font-size: 0.875rem;
+            color: var(--text-light);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 600;
+        }
+
+        .timer-container {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            z-index: 1;
+        }
+
+        .timer {
+            font-size: 1.75rem;
+            font-weight: 700;
+            min-width: 3.5rem;
+            text-align: center;
+            transition: var(--transition);
+            font-family: 'JetBrains Mono', monospace;
+            background-color: var(--light);
+            padding: 0.5rem 1rem;
+            border-radius: var(--border-radius-sm);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .timer.warning {
+            color: var(--warning);
+            animation: pulse 1.5s infinite;
+        }
+
+        .timer.danger {
+            color: var(--incorrect);
+            animation: pulse 0.8s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .level-indicator {
+            background-color: var(--light);
+            padding: 0.75rem 1.5rem;
+            border-radius: 9999px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            transition: var(--transition);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .level-progress {
+            width: 1.75rem;
+            height: 1.75rem;
+            border-radius: 50%;
+            background: conic-gradient(var(--primary) 0%, var(--light) 0%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: white;
+            box-shadow: 0 0 0 2px var(--card);
+        }
+
+        .controls {
+            display: flex;
+            gap: 1rem;
+            z-index: 1;
+        }
+
+        .control-btn {
+            background: var(--light);
+            border: none;
+            width: 3rem;
+            height: 3rem;
+            border-radius: var(--border-radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: var(--transition);
+            color: var(--text-light);
+            position: relative;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .control-btn:hover {
+            background-color: var(--primary);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(108, 92, 231, 0.2);
+        }
+
+        .control-btn.active {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        main {
+            grid-area: main;
+            background-color: var(--card);
+            border-radius: var(--border-radius);
+            padding: 2.5rem;
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+
+        main::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(108, 92, 231, 0.03) 0%, rgba(108, 92, 231, 0) 100%);
+            pointer-events: none;
+        }
+
+        .words-display {
+            font-size: 2rem;
+            line-height: 3.5rem;
+            text-align: center;
+            user-select: none;
+            transition: var(--transition);
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 500;
+            position: relative;
+            z-index: 1;
+        }
+
+        .word {
+            display: inline-block;
+            margin-right: 0.75rem;
+            position: relative;
+            transition: var(--transition);
+        }
+
+        .word::after {
+            content: '•';
+            color: var(--accent);
+            margin-left: 0.5rem;
+            opacity: 0.5;
+            transition: var(--transition);
+        }
+
+        .letter {
+            position: relative;
+            display: inline-block;
+            transition: var(--transition);
+        }
+
+        .letter.correct {
+            color: var(--correct);
+        }
+
+        .letter.incorrect {
+            color: var(--incorrect);
+            text-decoration: underline;
+            text-decoration-thickness: 2px;
+            text-underline-offset: 0.25rem;
+            position: relative;
+        }
+
+        .letter.incorrect::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            bottom: -2px;
+            width: 100%;
+            height: 2px;
+            background-color: var(--incorrect);
+            transform-origin: left;
+            animation: strike 0.3s forwards;
+        }
+
+        @keyframes strike {
+            0% { transform: scaleX(0); }
+            100% { transform: scaleX(1); }
+        }
+
+        .letter.current {
+            background-color: var(--primary);
+            color: white;
+            border-radius: 4px;
+            padding: 0 0.25rem;
+            position: relative;
+            z-index: 2;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(108, 92, 231, 0.3);
+        }
+
+        .letter.current::after {
+            content: '';
+            position: absolute;
+            bottom: -0.5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80%;
+            height: 3px;
+            background-color: var(--primary);
+            border-radius: 999px;
+            animation: pulseWidth 1.5s infinite;
+            filter: blur(1px);
+        }
+
+        @keyframes pulseWidth {
+            0%, 100% { width: 80%; }
+            50% { width: 60%; }
+        }
+
+        .word.current {
+            transform: translateY(-3px);
+        }
+
+        .keyboard {
+            grid-area: keyboard;
+            background-color: var(--card);
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .keyboard::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(108, 92, 231, 0.03) 0%, rgba(108, 92, 231, 0) 100%);
+            pointer-events: none;
+        }
+
+        .keyboard-row {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 0.5rem;
+            gap: 0.5rem;
+        }
+
+        .key {
+            background-color: var(--light);
+            border: none;
+            border-radius: var(--border-radius-sm);
+            padding: 1rem 0;
+            min-width: 3.5rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: default;
+            box-shadow: 0 4px 0 rgba(0, 0, 0, 0.1);
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            color: var(--text);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .key::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            opacity: 0;
+            transition: var(--transition);
+        }
+
+        .key span {
+            position: relative;
+            z-index: 1;
+        }
+
+        .key.active {
+            transform: translateY(4px);
+            box-shadow: 0 0 0 rgba(0, 0, 0, 0.1);
+            color: white;
+        }
+
+        .key.active::before {
+            opacity: 1;
+        }
+
+        .key.space {
+            width: 24rem;
+            position: relative;
+        }
+
+        .key.space::after {
+            content: 'SPACE';
+            position: absolute;
+            z-index: 1;
+            font-size: 0.875rem;
+            color: var(--text-light);
+            bottom: 0.25rem;
+        }
+
+        .key.active.space::after {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .sidebar {
+            grid-area: sidebar;
+            background-color: var(--card);
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-direction: column;
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .sidebar::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(108, 92, 231, 0.03) 0%, rgba(108, 92, 231, 0) 100%);
+            pointer-events: none;
+        }
+
+        .sidebar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .sidebar-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .sidebar-title::before {
+            content: '';
+            width: 1.5rem;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary), var(--accent));
+            border-radius: 999px;
+        }
+
+        .accuracy-progress {
+            width: 100%;
+            height: 0.75rem;
+            background-color: var(--light);
+            border-radius: 999px;
+            margin: 1.5rem 0;
+            overflow: hidden;
+            transition: var(--transition);
+            position: relative;
+            z-index: 1;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .accuracy-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--incorrect), var(--warning), var(--correct));
+            width: 100%;
+            transition: width 0.5s ease, background 0.5s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .accuracy-bar::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, 
+                rgba(255, 255, 255, 0.2) 0%, 
+                rgba(255, 255, 255, 0) 50%, 
+                rgba(0, 0, 0, 0.1) 100%);
+        }
+
+        .accuracy-chart {
+            flex-grow: 1;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            margin-bottom: 2rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .accuracy-letter {
+            text-align: center;
+            padding: 1rem 0.5rem;
+            background-color: var(--light);
+            border-radius: var(--border-radius-sm);
+            transition: var(--transition);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+            cursor: default;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .accuracy-letter::before {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background-color: var(--primary);
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: var(--transition);
+        }
+
+        .accuracy-letter:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .accuracy-letter:hover::before {
+            transform: scaleX(1);
+        }
+
+        .accuracy-char {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .accuracy-value {
+            font-weight: 700;
+            font-size: 0.875rem;
+            transition: var(--transition);
+        }
+
+        .problem-letters {
+            margin-top: 1.5rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .problem-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--text-light);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .problem-title::before {
+            content: '';
+            width: 1rem;
+            height: 2px;
+            background-color: var(--primary);
+        }
+
+        .problem-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+        }
+
+        .problem-letter {
+            background-color: var(--light);
+            color: var(--incorrect);
+            padding: 0.75rem 1rem;
+            border-radius: var(--border-radius-sm);
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: var(--transition);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .problem-letter::before {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background-color: var(--incorrect);
+            transform: scaleX(0.5);
+            transform-origin: left;
+            transition: var(--transition);
+        }
+
+        .problem-letter:hover::before {
+            transform: scaleX(1);
+        }
+
+        .problem-accuracy {
+            font-size: 0.875rem;
+            opacity: 0.8;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .sidebar-controls {
+            display: flex;
+            gap: 1rem;
+            margin-top: auto;
+            position: relative;
+            z-index: 1;
+        }
+
+        .btn {
+            padding: 1rem 1.5rem;
+            border-radius: var(--border-radius-sm);
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: var(--transition);
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0) 100%);
+            opacity: 0;
+            transition: var(--transition);
+        }
+
+        .btn:hover::before {
+            opacity: 1;
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+            box-shadow: 0 4px 12px rgba(108, 92, 231, 0.3);
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(108, 92, 231, 0.4);
+        }
+
+        .btn-secondary {
+            background-color: var(--light);
+            color: var(--text);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-secondary:hover {
+            background-color: var(--background);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .tooltip {
+            position: absolute;
+            top: -2.75rem;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: var(--dark);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: var(--border-radius-sm);
+            font-size: 0.875rem;
+            font-weight: 500;
+            white-space: nowrap;
+            pointer-events: none;
+            opacity: 0;
+            transition: var(--transition);
+            z-index: 10;
+            box-shadow: var(--shadow);
+        }
+
+        .tooltip::after {
+            content: '';
+            position: absolute;
+            bottom: -0.5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            border-width: 0.5rem 0.5rem 0;
+            border-style: solid;
+            border-color: var(--dark) transparent transparent;
+        }
+
+        .control-btn:hover .tooltip {
+            opacity: 1;
+            transform: translateX(-50%) translateY(-0.25rem);
+        }
+
+        .confetti {
+            position: fixed;
+            width: 12px;
+            height: 12px;
+            background-color: var(--primary);
+            opacity: 0;
+            z-index: 100;
+            animation: confetti-fall 5s linear forwards;
+            border-radius: 50%;
+        }
+
+        @keyframes confetti-fall {
+            0% {
+                transform: translateY(-100vh) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(100vh) rotate(720deg);
+                opacity: 0;
+            }
+        }
+
+        .level-up {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            color: white;
+            padding: 2rem 3rem;
+            border-radius: var(--border-radius);
+            font-size: 2rem;
+            font-weight: 700;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            box-shadow: var(--shadow-lg);
+            animation: level-up-anim 2s ease-out forwards;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        @keyframes level-up-anim {
+            0% {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0.5);
+            }
+            20% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1.1);
+            }
+            40% {
+                transform: translate(-50%, -50%) scale(1);
+            }
+            80% {
+                opacity: 1;
+            }
+            100% {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(1);
+            }
+        }
+
+        .level-up span {
+            font-size: 1rem;
+            font-weight: 500;
+            opacity: 0.9;
+        }
+
+        @media (max-width: 1200px) {
+            body {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto auto auto auto;
+                grid-template-areas:
+                    "header"
+                    "main"
+                    "keyboard"
+                    "sidebar";
+            }
+
+            .words-display {
+                font-size: 1.75rem;
+                line-height: 3rem;
+            }
+
+            .key.space {
+                width: 18rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem;
+                gap: 1rem;
+            }
+
+            header {
+                padding: 1.25rem;
+                flex-wrap: wrap;
+                gap: 1rem;
+            }
+
+            .stats {
+                order: 1;
+                width: 100%;
+                justify-content: space-between;
+                gap: 0.5rem;
+            }
+
+            .stat {
+                min-width: auto;
+                padding: 0.5rem;
+            }
+
+            .stat-value {
+                font-size: 1.5rem;
+            }
+
+            .words-display {
+                font-size: 1.5rem;
+                line-height: 2.5rem;
+                padding: 1rem;
+            }
+
+            .key {
+                min-width: 2.5rem;
+                padding: 0.75rem 0;
+                font-size: 1rem;
+            }
+
+            .key.space {
+                width: 14rem;
+            }
+
+            .accuracy-chart {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 0.75rem;
+            }
+
+            .sidebar {
+                padding: 1.25rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .words-display {
+                font-size: 1.25rem;
+                line-height: 2.25rem;
+            }
+
+            .key {
+                min-width: 2rem;
+                padding: 0.5rem 0;
+                font-size: 0.875rem;
+            }
+
+            .key.space {
+                width: 10rem;
+            }
+
+            .accuracy-chart {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .btn {
+                padding: 0.75rem 1rem;
+                font-size: 0.875rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <div class="logo-icon">T</div>
+            <span>TypeMaster Pro</span>
+        </div>
+        <div class="stats">
+            <div class="stat">
+                <div class="stat-value" id="wpm">0</div>
+                <div class="stat-label">WPM</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="accuracy">100%</div>
+                <div class="stat-label">Accuracy</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="streak">0</div>
+                <div class="stat-label">Streak</div>
+            </div>
+        </div>
+        <div class="timer-container">
+            <div class="timer" id="timer">60</div>
+            <div class="level-indicator">
+                <div class="level-progress" id="level-progress">0%</div>
+                <span id="level">Level 1</span>
+            </div>
+        </div>
+        <div class="controls">
+            <button class="control-btn" id="sound-toggle" aria-label="Toggle sound">
+                🔈
+                <span class="tooltip">Toggle sound</span>
+            </button>
+            <button class="control-btn" id="mode-toggle" aria-label="Toggle theme">
+                🌓
+                <span class="tooltip">Toggle theme</span>
+            </button>
+        </div>
+    </header>
+
+    <main>
+        <div class="words-display" id="words-display"></div>
+    </main>
+
+    <div class="keyboard">
+        <div class="keyboard-row">
+            <div class="key" data-key="q"><span>Q</span></div>
+            <div class="key" data-key="w"><span>W</span></div>
+            <div class="key" data-key="e"><span>E</span></div>
+            <div class="key" data-key="r"><span>R</span></div>
+            <div class="key" data-key="t"><span>T</span></div>
+            <div class="key" data-key="y"><span>Y</span></div>
+            <div class="key" data-key="u"><span>U</span></div>
+            <div class="key" data-key="i"><span>I</span></div>
+            <div class="key" data-key="o"><span>O</span></div>
+            <div class="key" data-key="p"><span>P</span></div>
+        </div>
+        <div class="keyboard-row">
+            <div class="key" data-key="a"><span>A</span></div>
+            <div class="key" data-key="s"><span>S</span></div>
+            <div class="key" data-key="d"><span>D</span></div>
+            <div class="key" data-key="f"><span>F</span></div>
+            <div class="key" data-key="g"><span>G</span></div>
+            <div class="key" data-key="h"><span>H</span></div>
+            <div class="key" data-key="j"><span>J</span></div>
+            <div class="key" data-key="k"><span>K</span></div>
+            <div class="key" data-key="l"><span>L</span></div>
+        </div>
+        <div class="keyboard-row">
+            <div class="key" data-key="z"><span>Z</span></div>
+            <div class="key" data-key="x"><span>X</span></div>
+            <div class="key" data-key="c"><span>C</span></div>
+            <div class="key" data-key="v"><span>V</span></div>
+            <div class="key" data-key="b"><span>B</span></div>
+            <div class="key" data-key="n"><span>N</span></div>
+            <div class="key" data-key="m"><span>M</span></div>
+        </div>
+        <div class="keyboard-row">
+            <div class="key space" data-key=" "></div>
+        </div>
+    </div>
+
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2 class="sidebar-title">Progress Analytics</h2>
+        </div>
+        <div class="accuracy-progress">
+            <div class="accuracy-bar" id="accuracy-bar"></div>
+        </div>
+        <div class="accuracy-chart" id="accuracy-chart"></div>
+        
+        <div class="problem-letters" id="problem-letters-container">
+            <h3 class="problem-title">Focus Areas</h3>
+            <div class="problem-container" id="problem-letters"></div>
+        </div>
+        
+        <div class="sidebar-controls">
+            <button class="btn btn-primary" id="new-level-btn">
+                <span>New Level</span>
+            </button>
+            <button class="btn btn-secondary" id="reset-btn">
+                <span>Reset</span>
+            </button>
+        </div>
+    </div>
+
+    <div class="level-up" id="level-up">
+        Level Up!
+        <span>You've reached level <span id="level-up-number">2</span></span>
+    </div>
+
+    <script>
+        // State variables
+        let state = {
+            words: [],
+            wordDictionary: [],
+            currentWordIndex: 0,
+            currentLetterIndex: 0,
+            correctLetters: 0,
+            incorrectLetters: 0,
+            startTime: null,
+            timerInterval: null,
+            timeLeft: 60,
+            isRunning: false,
+            level: 1,
+            streak: 0,
+            letterAccuracy: {},
+            problemLetters: new Set(),
+            demoLevelsCompleted: 0,
+            darkMode: false,
+            soundEnabled: true,
+            levelProgress: 0,
+            levelTarget: 4,
+            totalKeyPresses: 0,
+            sessionKeyPresses: 0,
+            lastKeyPressTime: null,
+            lastAccuracyUpdate: 0
+        };
+
+        // Initialize letter accuracy tracking
+        'abcdefghijklmnopqrstuvwxyz'.split('').forEach(letter => {
+            state.letterAccuracy[letter] = { 
+                correct: 0, 
+                incorrect: 0, 
+                percentage: 100,
+                lastCorrect: null,
+                lastIncorrect: null
+            };
+        });
+
+        // DOM elements
+        const wordsDisplay = document.getElementById('words-display');
+        const wpmElement = document.getElementById('wpm');
+        const accuracyElement = document.getElementById('accuracy');
+        const streakElement = document.getElementById('streak');
+        const timerElement = document.getElementById('timer');
+        const levelElement = document.getElementById('level');
+        const levelProgressElement = document.getElementById('level-progress');
+        const accuracyBar = document.getElementById('accuracy-bar');
+        const accuracyChart = document.getElementById('accuracy-chart');
+        const problemLettersContainer = document.getElementById('problem-letters-container');
+        const problemLettersElement = document.getElementById('problem-letters');
+        const newLevelBtn = document.getElementById('new-level-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        const modeToggle = document.getElementById('mode-toggle');
+        const soundToggle = document.getElementById('sound-toggle');
+        const levelUpElement = document.getElementById('level-up');
+        const levelUpNumber = document.getElementById('level-up-number');
+        const keys = document.querySelectorAll('.key');
+
+        // Audio elements
+        const keySounds = {
+            normal: [
+                new Audio('sounds/key1.mp3'),
+                new Audio('sounds/key2.mp3'),
+                new Audio('sounds/key3.mp3')
+            ],
+            space: new Audio('sounds/space.mp3'),
+            correct: new Audio('sounds/correct.mp3'),
+            incorrect: new Audio('sounds/incorrect.mp3'),
+            levelComplete: new Audio('sounds/level-complete.mp3')
+        };
+
+        // Initialize the app
+        async function init() {
+            await loadWordDictionary();
+            loadState();
+            renderAccuracyChart();
+            generateDemoLevel();
+            setupEventListeners();
+            updateUI();
+            
+            // Set volume for all sounds
+            Object.values(keySounds).forEach(sound => {
+                if (Array.isArray(sound)) {
+                    sound.forEach(s => s.volume = 0.25);
+                } else {
+                    sound.volume = 0.25;
+                }
+            });
+        }
+
+        // Load word dictionary from JSON file
+        async function loadWordDictionary() {
+            try {
+                const response = await fetch('words_dictionary.json');
+                const data = await response.json();
+                state.wordDictionary = Object.keys(data)
+                    .filter(word => word.length >= 3 && /^[a-zA-Z]+$/.test(word))
+                    .map(word => word.toLowerCase());
+                
+                if (state.wordDictionary.length === 0) {
+                    throw new Error('No valid words found');
+                }
+                
+                console.log('Loaded', state.wordDictionary.length, 'words');
+            } catch (error) {
+                console.error('Error loading word dictionary:', error);
+                // Fallback to a basic word list if the file fails to load
+                state.wordDictionary = [
+                    "apple", "banana", "cherry", "date", "elderberry", "fig", "grape", "honeydew",
+                    "kiwi", "lemon", "mango", "nectarine", "orange", "pear", "quince", "raspberry",
+                    "strawberry", "tangerine", "vanilla", "watermelon", "xylophone", "yam", "zucchini",
+                    "ant", "bear", "cat", "dog", "elephant", "fox", "giraffe", "hippo", "iguana",
+                    "jaguar", "kangaroo", "lion", "monkey", "newt", "owl", "penguin", "quail", "rabbit",
+                    "snake", "tiger", "urchin", "vulture", "walrus", "xerus", "yak", "zebra",
+                    "about", "above", "after", "again", "below", "could", "every", "first", "found",
+                    "great", "house", "large", "learn", "never", "other", "place", "plant", "point",
+                    "right", "small", "sound", "spell", "still", "study", "their", "there", "these",
+                    "thing", "think", "three", "water", "where", "which", "world", "would", "write"
+                ].map(word => word.toLowerCase());
+            }
+        }
+
+        // Load state from localStorage
+        function loadState() {
+            const savedState = localStorage.getItem('typingTutorState');
+            if (savedState) {
+                try {
+                    const parsedState = JSON.parse(savedState);
+                    Object.assign(state, parsedState);
+                    
+                    // Convert problemLetters back to Set
+                    state.problemLetters = new Set(parsedState.problemLetters || []);
+                    
+                    // Reinitialize letter accuracy if needed
+                    if (Object.keys(state.letterAccuracy).length === 0) {
+                        'abcdefghijklmnopqrstuvwxyz'.split('').forEach(letter => {
+                            state.letterAccuracy[letter] = { 
+                                correct: 0, 
+                                incorrect: 0, 
+                                percentage: 100,
+                                lastCorrect: null,
+                                lastIncorrect: null
+                            };
+                        });
+                    }
+                    
+                    // Update UI based on saved state
+                    if (parsedState.darkMode) {
+                        document.body.classList.add('dark-mode');
+                        modeToggle.textContent = '🌞';
+                    }
+                    
+                    if (parsedState.soundEnabled === false) {
+                        state.soundEnabled = false;
+                        soundToggle.textContent = '🔇';
+                    }
+                    
+                    updateUI();
+                } catch (e) {
+                    console.error('Error loading saved state:', e);
+                }
+            }
+        }
+
+        // Save state to localStorage
+        function saveState() {
+            // Convert Sets to Arrays for serialization
+            const stateToSave = {
+                ...state,
+                problemLetters: Array.from(state.problemLetters)
+            };
+            localStorage.setItem('typingTutorState', JSON.stringify(stateToSave));
+        }
+
+        // Set up event listeners
+        function setupEventListeners() {
+            document.addEventListener('keydown', handleKeyDown);
+            document.addEventListener('keyup', handleKeyUp);
+            newLevelBtn.addEventListener('click', startNewLevel);
+            resetBtn.addEventListener('click', resetApp);
+            modeToggle.addEventListener('click', toggleDarkMode);
+            soundToggle.addEventListener('click', toggleSound);
+            
+            // Prevent spacebar from scrolling page
+            window.addEventListener('keydown', function(e) {
+                if (e.key === ' ' && e.target === document.body) {
+                    e.preventDefault();
+                }
+            });
+
+            // Add touch event listeners for mobile keyboard
+            keys.forEach(key => {
+                key.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    const keyValue = key.getAttribute('data-key');
+                    simulateKeyPress(keyValue);
+                    key.classList.add('active');
+                });
+
+                key.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    key.classList.remove('active');
+                });
+            });
+        }
+
+        // Simulate key press for touch devices
+        function simulateKeyPress(key) {
+            const event = new KeyboardEvent('keydown', {
+                key: key === ' ' ? ' ' : key.toUpperCase(),
+                code: `Key${key.toUpperCase()}`,
+                bubbles: true
+            });
+            document.dispatchEvent(event);
+        }
+
+        // Generate demo level with words starting with different letters
+        function generateDemoLevel() {
+            const uniqueFirstLetters = new Set();
+            state.words = [];
+            
+            // Try to get words with unique first letters
+            const shuffledWords = [...state.wordDictionary].sort(() => Math.random() - 0.5);
+            
+            for (const word of shuffledWords) {
+                if (word.length < 3) continue;
+                
+                const firstLetter = word[0].toLowerCase();
+                if (!uniqueFirstLetters.has(firstLetter)) {
+                    uniqueFirstLetters.add(firstLetter);
+                    state.words.push(word);
+                    
+                    if (state.words.length >= 25 || uniqueFirstLetters.size >= 26) {
+                        break;
+                    }
+                }
+            }
+            
+            // Fill remaining slots with random words if needed
+            while (state.words.length < 25) {
+                const randomWord = getRandomWord();
+                if (randomWord) state.words.push(randomWord);
+            }
+            
+            // Shuffle the selected words
+            state.words = shuffleArray(state.words).slice(0, 25);
+            
+            renderWords();
+        }
+
+        // Get a random word from dictionary
+        function getRandomWord() {
+            if (state.wordDictionary.length === 0) return null;
+            const randomIndex = Math.floor(Math.random() * state.wordDictionary.length);
+            return state.wordDictionary[randomIndex];
+        }
+
+        // Generate level focused on problem letters
+        function generateProblemLevel() {
+            const problemLettersArray = Array.from(state.problemLetters);
+            
+            if (problemLettersArray.length === 0) {
+                // No problem letters, generate normal level
+                generateDemoLevel();
+                return;
+            }
+            
+            // Sort letters by accuracy (worst first)
+            const sortedLetters = problemLettersArray.sort((a, b) => {
+                const aAccuracy = state.letterAccuracy[a].percentage;
+                const bAccuracy = state.letterAccuracy[b].percentage;
+                
+                // If same accuracy, prioritize letters with more recent mistakes
+                if (aAccuracy === bAccuracy) {
+                    const aLastIncorrect = state.letterAccuracy[a].lastIncorrect || 0;
+                    const bLastIncorrect = state.letterAccuracy[b].lastIncorrect || 0;
+                    return bLastIncorrect - aLastIncorrect;
+                }
+                
+                return aAccuracy - bAccuracy;
+            });
+            
+            // Focus on the worst 3-5 letters
+            const targetLetters = sortedLetters.slice(0, 3 + Math.floor(state.level / 3));
+            state.words = [];
+            
+            // Find words containing target letters
+            const shuffledWords = [...state.wordDictionary].sort(() => Math.random() - 0.5);
+            
+            for (const word of shuffledWords) {
+                if (word.length < 3) continue;
+                
+                // Check if word contains any target letters
+                const containsTarget = targetLetters.some(letter => 
+                    word.toLowerCase().includes(letter)
+                );
+                
+                if (containsTarget && state.words.length < 25) {
+                    state.words.push(word);
+                }
+                
+                if (state.words.length >= 25) break;
+            }
+            
+            // Fill remaining slots with words that start with problem letters
+            if (state.words.length < 25) {
+                for (const letter of targetLetters) {
+                    const wordsStartingWithLetter = state.wordDictionary.filter(
+                        word => word[0].toLowerCase() === letter
+                    );
+                    
+                    for (const word of wordsStartingWithLetter) {
+                        if (state.words.length >= 25) break;
+                        if (!state.words.includes(word)) {
+                            state.words.push(word);
+                        }
+                    }
+                    
+                    if (state.words.length >= 25) break;
+                }
+            }
+            
+            // Fill remaining slots with random words if needed
+            while (state.words.length < 25) {
+                const randomWord = getRandomWord();
+                if (randomWord && !state.words.includes(randomWord)) {
+                    state.words.push(randomWord);
+                }
+            }
+            
+            // Shuffle the words
+            state.words = shuffleArray(state.words).slice(0, 25);
+            
+            renderWords();
+        }
+
+        // Shuffle array
+        function shuffleArray(array) {
+            const newArray = [...array];
+            for (let i = newArray.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+            }
+            return newArray;
+        }
+
+        // Render words to display
+        function renderWords() {
+            wordsDisplay.innerHTML = '';
+            
+            state.words.forEach((word, wordIndex) => {
+                const wordSpan = document.createElement('span');
+                wordSpan.className = 'word';
+                
+                for (let i = 0; i < word.length; i++) {
+                    const letterSpan = document.createElement('span');
+                    letterSpan.className = 'letter';
+                    letterSpan.textContent = word[i];
+                    
+                    if (wordIndex === state.currentWordIndex && i === state.currentLetterIndex) {
+                        letterSpan.classList.add('current');
+                    }
+                    
+                    wordSpan.appendChild(letterSpan);
+                }
+                
+                wordsDisplay.appendChild(wordSpan);
+            });
+        }
+
+        // Handle key down events
+        function handleKeyDown(e) {
+            // Prevent default for spacebar to avoid scrolling
+            if (e.key === ' ') {
+                e.preventDefault();
+            }
+
+            // Highlight keyboard key
+            const keyElement = document.querySelector(`.key[data-key="${e.key.toLowerCase()}"]`);
+            if (keyElement) {
+                keyElement.classList.add('active');
+                playKeySound(e.key === ' ' ? 'space' : 'normal');
+            }
+
+            // Start test if not running
+            if (!state.isRunning) {
+                startTest();
+                // Don't process the first key press as input
+                return;
+            }
+
+            // Get current word and letters
+            const currentWord = state.words[state.currentWordIndex];
+            if (!currentWord) return;
+
+            const currentLetter = currentWord[state.currentLetterIndex];
+            const wordElement = wordsDisplay.querySelectorAll('.word')[state.currentWordIndex];
+            if (!wordElement) return;
+
+            const letterElements = wordElement.querySelectorAll('.letter');
+            if (!letterElements || state.currentLetterIndex >= letterElements.length) return;
+
+            state.totalKeyPresses++;
+            state.sessionKeyPresses++;
+            state.lastKeyPressTime = Date.now();
+
+            if (e.key === currentLetter) {
+                // Correct letter
+                state.correctLetters++;
+                const letterKey = currentLetter.toLowerCase();
+                state.letterAccuracy[letterKey].correct++;
+                state.letterAccuracy[letterKey].lastCorrect = Date.now();
+                letterElements[state.currentLetterIndex].classList.add('correct');
+                letterElements[state.currentLetterIndex].classList.remove('incorrect');
+                
+                playKeySound('correct');
+                
+                state.currentLetterIndex++;
+
+                // Move to next word if at end of current word
+                if (state.currentLetterIndex >= currentWord.length) {
+                    moveToNextWord();
+                }
+            } else {
+                // Incorrect letter
+                state.incorrectLetters++;
+                if (currentLetter) {
+                    const letterKey = currentLetter.toLowerCase();
+                    state.letterAccuracy[letterKey].incorrect++;
+                    state.letterAccuracy[letterKey].lastIncorrect = Date.now();
+                    state.problemLetters.add(letterKey);
+                }
+                letterElements[state.currentLetterIndex].classList.add('incorrect');
+                
+                playKeySound('incorrect');
+            }
+
+            // Update displays
+            updateLetterAccuracy();
+            updateUI();
+            updateCurrentLetter();
+        }
+
+        // Handle key up events
+        function handleKeyUp(e) {
+            const keyElement = document.querySelector(`.key[data-key="${e.key.toLowerCase()}"]`);
+            if (keyElement) {
+                keyElement.classList.remove('active');
+            }
+        }
+
+        // Play keyboard sound
+        function playKeySound(type = 'normal') {
+            if (!state.soundEnabled) return;
+            
+            try {
+                if (type === 'space' && keySounds.space) {
+                    keySounds.space.currentTime = 0;
+                    keySounds.space.play();
+                } else if (type === 'correct' && keySounds.correct) {
+                    keySounds.correct.currentTime = 0;
+                    keySounds.correct.play();
+                } else if (type === 'incorrect' && keySounds.incorrect) {
+                    keySounds.incorrect.currentTime = 0;
+                    keySounds.incorrect.play();
+                } else if (Array.isArray(keySounds.normal)) {
+                    const sound = keySounds.normal[Math.floor(Math.random() * keySounds.normal.length)];
+                    sound.currentTime = 0;
+                    sound.play();
+                }
+            } catch (e) {
+                console.error('Error playing sound:', e);
+            }
+        }
+
+        // Update letter accuracy calculations
+        function updateLetterAccuracy() {
+            // Only update accuracy chart every 10 key presses for performance
+            if (state.totalKeyPresses - state.lastAccuracyUpdate < 10 && state.totalKeyPresses > 0) {
+                return;
+            }
+            
+            state.lastAccuracyUpdate = state.totalKeyPresses;
+            
+            let totalAccuracy = 0;
+            let letterCount = 0;
+            
+            for (const letter in state.letterAccuracy) {
+                const stats = state.letterAccuracy[letter];
+                const total = stats.correct + stats.incorrect;
+                
+                if (total > 0) {
+                    stats.percentage = Math.round((stats.correct / total) * 100);
+                    totalAccuracy += stats.percentage;
+                    letterCount++;
+                } else {
+                    stats.percentage = 100;
+                    totalAccuracy += 100;
+                    letterCount++;
+                }
+            }
+            
+            // Update overall accuracy
+            const overallAccuracy = letterCount > 0 ? Math.round(totalAccuracy / letterCount) : 100;
+            accuracyBar.style.width = `${overallAccuracy}%`;
+            
+            // Update accuracy bar color
+            if (overallAccuracy < 70) {
+                accuracyBar.style.background = 'var(--incorrect)';
+            } else if (overallAccuracy < 90) {
+                accuracyBar.style.background = 'var(--warning)';
+            } else {
+                accuracyBar.style.background = 'var(--correct)';
+            }
+            
+            renderAccuracyChart();
+            renderProblemLetters();
+        }
+
+        // Render accuracy chart
+        function renderAccuracyChart() {
+            accuracyChart.innerHTML = '';
+            
+            // Sort letters by accuracy (worst first)
+            const sortedLetters = Object.entries(state.letterAccuracy)
+                .sort(([, a], [, b]) => a.percentage - b.percentage);
+            
+            for (const [letter, stats] of sortedLetters) {
+                const letterElement = document.createElement('div');
+                letterElement.className = 'accuracy-letter';
+                
+                const letterSpan = document.createElement('div');
+                letterSpan.className = 'accuracy-char';
+                letterSpan.textContent = letter.toUpperCase();
+                
+                const valueSpan = document.createElement('div');
+                valueSpan.className = 'accuracy-value';
+                valueSpan.textContent = `${stats.percentage}%`;
+                
+                // Color based on accuracy
+                if (stats.percentage < 70) {
+                    valueSpan.style.color = 'var(--incorrect)';
+                    letterElement.style.backgroundColor = 'rgba(214, 48, 49, 0.1)';
+                } else if (stats.percentage < 90) {
+                    valueSpan.style.color = 'var(--warning)';
+                    letterElement.style.backgroundColor = 'rgba(253, 203, 110, 0.1)';
+                } else {
+                    valueSpan.style.color = 'var(--correct)';
+                    letterElement.style.backgroundColor = 'rgba(0, 184, 148, 0.1)';
+                }
+                
+                // Add tooltip with detailed stats
+                letterElement.title = `${stats.correct} correct, ${stats.incorrect} incorrect`;
+                
+                letterElement.appendChild(letterSpan);
+                letterElement.appendChild(valueSpan);
+                accuracyChart.appendChild(letterElement);
+            }
+        }
+
+        // Render problem letters
+        function renderProblemLetters() {
+            problemLettersElement.innerHTML = '';
+            
+            // Get letters with accuracy < 90%
+            const problemLetters = Object.entries(state.letterAccuracy)
+                .filter(([, stats]) => stats.percentage < 90)
+                .sort(([, a], [, b]) => a.percentage - b.percentage);
+            
+            if (problemLetters.length === 0) {
+                problemLettersContainer.style.display = 'none';
+                return;
+            }
+            
+            problemLettersContainer.style.display = 'block';
+            
+            // Show top 6 problem letters
+            for (const [letter, stats] of problemLetters.slice(0, 6)) {
+                const letterElement = document.createElement('div');
+                letterElement.className = 'problem-letter';
+                letterElement.innerHTML = `
+                    ${letter.toUpperCase()}
+                    <span class="problem-accuracy">${stats.percentage}%</span>
+                `;
+                
+                // Add hover effect
+                letterElement.addEventListener('mouseenter', () => {
+                    const wordsWithLetter = state.wordDictionary
+                        .filter(word => word.includes(letter))
+                        .slice(0, 3)
+                        .join(', ');
+                    letterElement.title = `Practice words: ${wordsWithLetter}`;
+                });
+                
+                problemLettersElement.appendChild(letterElement);
+            }
+        }
+
+        // Move to next word
+        function moveToNextWord() {
+            state.currentWordIndex++;
+            state.currentLetterIndex = 0;
+            
+            if (state.currentWordIndex >= state.words.length) {
+                // Reached end of word list - generate new words
+                if (state.level <= 4) {
+                    generateDemoLevel();
+                } else {
+                    generateProblemLevel();
+                }
+                state.currentWordIndex = 0;
+            }
+            
+            renderWords();
+            updateCurrentLetter();
+        }
+
+        // Update current letter highlight
+        function updateCurrentLetter() {
+            const letterElements = wordsDisplay.querySelectorAll('.letter');
+            letterElements.forEach(el => el.classList.remove('current'));
+            
+            if (state.currentWordIndex < state.words.length) {
+                const currentWordElements = wordsDisplay.querySelectorAll('.word')[state.currentWordIndex]?.querySelectorAll('.letter');
+                if (currentWordElements && state.currentLetterIndex < currentWordElements.length) {
+                    currentWordElements[state.currentLetterIndex].classList.add('current');
+                    
+                    // Scroll to keep current letter visible
+                    currentWordElements[state.currentLetterIndex].scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'nearest',
+                        inline: 'center'
+                    });
+                }
+            }
+        }
+
+        // Start the test
+        function startTest() {
+            if (state.isRunning) return;
+            
+            state.isRunning = true;
+            state.startTime = Date.now();
+            state.timeLeft = 60;
+            updateTimerDisplay();
+            
+            state.timerInterval = setInterval(() => {
+                state.timeLeft--;
+                updateTimerDisplay();
+                
+                if (state.timeLeft <= 0) {
+                    finishLevel();
+                }
+            }, 1000);
+            
+            // Update UI
+            newLevelBtn.disabled = true;
+            timerElement.classList.remove('warning', 'danger');
+            
+            // Focus on the words display
+            wordsDisplay.focus();
+        }
+
+        // Update timer display
+        function updateTimerDisplay() {
+            timerElement.textContent = state.timeLeft;
+            
+            // Change styling when time is running low
+            if (state.timeLeft <= 10) {
+                timerElement.classList.remove('warning');
+                timerElement.classList.add('danger');
+            } else if (state.timeLeft <= 20) {
+                timerElement.classList.remove('danger');
+                timerElement.classList.add('warning');
+            } else {
+                timerElement.classList.remove('warning', 'danger');
+            }
+        }
+
+        // Finish current level
+        function finishLevel() {
+            clearInterval(state.timerInterval);
+            state.isRunning = false;
+            
+            // Calculate WPM and accuracy
+            const timeInMinutes = (60 - state.timeLeft) / 60;
+            const wpm = Math.round((state.correctLetters / 5) / timeInMinutes);
+            const accuracy = state.correctLetters / (state.correctLetters + state.incorrectLetters) * 100;
+            
+            // Update state
+            state.demoLevelsCompleted++;
+            
+            // Check if we should move to problem levels
+            if (state.demoLevelsCompleted >= 4 && state.level === 1) {
+                state.level = 2;
+                state.levelProgress = 0;
+                state.levelTarget = 5; // Next target after demo levels
+            }
+            
+            // Check level progress
+            const worstLetter = getWorstLetter();
+            const worstLetterAccuracy = worstLetter ? state.letterAccuracy[worstLetter].percentage : 100;
+            
+            if (worstLetterAccuracy >= 90) {
+                state.levelProgress++;
+                
+                // Check if level target reached
+                if (state.levelProgress >= state.levelTarget) {
+                    showLevelUp(state.level + 1);
+                    state.level++;
+                    state.streak++;
+                    state.levelProgress = 0;
+                    state.levelTarget = Math.min(state.levelTarget + 2, 10); // Increase target for next level
+                    
+                    // Celebrate level up
+                    if (state.soundEnabled && keySounds.levelComplete) {
+                        keySounds.levelComplete.currentTime = 0;
+                        keySounds.levelComplete.play().catch(e => console.log('Audio play failed:', e));
+                    }
+                    
+                    createConfetti();
+                }
+            } else {
+                state.streak = 0;
+            }
+            
+            // Update UI
+            wpmElement.textContent = wpm;
+            accuracyElement.textContent = `${Math.round(accuracy)}%`;
+            levelElement.textContent = `Level ${state.level}`;
+            levelProgressElement.textContent = `${Math.round((state.levelProgress / state.levelTarget) * 100)}%`;
+            levelProgressElement.parentNode.style.background = `conic-gradient(var(--primary) ${(state.levelProgress / state.levelTarget) * 100}%, var(--light) 0%)`;
+            streakElement.textContent = state.streak;
+            
+            // Enable new level button
+            newLevelBtn.disabled = false;
+            
+            // Save state
+            saveState();
+        }
+
+        // Show level up animation
+        function showLevelUp(newLevel) {
+            levelUpNumber.textContent = newLevel;
+            levelUpElement.style.animation = 'none';
+            void levelUpElement.offsetWidth; // Trigger reflow
+            levelUpElement.style.animation = 'level-up-anim 2s ease-out forwards';
+        }
+
+        // Create confetti effect
+        function createConfetti() {
+            const colors = ['#6c5ce7', '#a29bfe', '#74b9ff', '#0984e3', '#00b894', '#fd79a8'];
+            
+            for (let i = 0; i < 150; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                confetti.style.left = `${Math.random() * 100}vw`;
+                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.width = `${Math.random() * 10 + 5}px`;
+                confetti.style.height = `${Math.random() * 10 + 5}px`;
+                confetti.style.animationDuration = `${Math.random() * 3 + 2}s`;
+                confetti.style.animationDelay = `${Math.random() * 0.5}s`;
+                
+                document.body.appendChild(confetti);
+                
+                // Remove confetti after animation
+                setTimeout(() => {
+                    confetti.remove();
+                }, 5000);
+            }
+        }
+
+        // Get the letter with lowest accuracy
+        function getWorstLetter() {
+            let worstLetter = null;
+            let lowestAccuracy = 100;
+            
+            for (const letter in state.letterAccuracy) {
+                if (state.letterAccuracy[letter].percentage < lowestAccuracy) {
+                    lowestAccuracy = state.letterAccuracy[letter].percentage;
+                    worstLetter = letter;
+                }
+            }
+            
+            return worstLetter;
+        }
+
+        // Start a new level
+        function startNewLevel() {
+            if (state.level <= 4) {
+                generateDemoLevel();
+            } else {
+                generateProblemLevel();
+            }
+            
+            // Reset level state
+            state.currentWordIndex = 0;
+            state.currentLetterIndex = 0;
+            state.correctLetters = 0;
+            state.incorrectLetters = 0;
+            state.timeLeft = 60;
+            state.sessionKeyPresses = 0;
+            
+            // Update UI
+            wpmElement.textContent = '0';
+            accuracyElement.textContent = '100%';
+            timerElement.textContent = '60';
+            timerElement.classList.remove('warning', 'danger');
+            updateUI();
+        }
+
+        // Reset the app
+        function resetApp() {
+            clearInterval(state.timerInterval);
+            
+            // Reset state
+            state = {
+                words: [],
+                wordDictionary: state.wordDictionary,
+                currentWordIndex: 0,
+                currentLetterIndex: 0,
+                correctLetters: 0,
+                incorrectLetters: 0,
+                startTime: null,
+                timerInterval: null,
+                timeLeft: 60,
+                isRunning: false,
+                level: 1,
+                streak: 0,
+                letterAccuracy: {},
+                problemLetters: new Set(),
+                demoLevelsCompleted: 0,
+                darkMode: state.darkMode,
+                soundEnabled: state.soundEnabled,
+                levelProgress: 0,
+                levelTarget: 4,
+                totalKeyPresses: 0,
+                sessionKeyPresses: 0,
+                lastKeyPressTime: null,
+                lastAccuracyUpdate: 0
+            };
+            
+            // Reset letter accuracy tracking
+            'abcdefghijklmnopqrstuvwxyz'.split('').forEach(letter => {
+                state.letterAccuracy[letter] = { 
+                    correct: 0, 
+                    incorrect: 0, 
+                    percentage: 100,
+                    lastCorrect: null,
+                    lastIncorrect: null
+                };
+            });
+            
+            // Generate new demo level
+            generateDemoLevel();
+            
+            // Update UI
+            updateUI();
+            renderAccuracyChart();
+            renderProblemLetters();
+            
+            // Save state
+            saveState();
+        }
+
+        // Toggle dark mode
+        function toggleDarkMode() {
+            state.darkMode = !state.darkMode;
+            document.body.classList.toggle('dark-mode', state.darkMode);
+            modeToggle.textContent = state.darkMode ? '🌞' : '🌓';
+            saveState();
+        }
+
+        // Toggle sound
+        function toggleSound() {
+            state.soundEnabled = !state.soundEnabled;
+            soundToggle.textContent = state.soundEnabled ? '🔈' : '🔇';
+            saveState();
+        }
+
+        // Update UI elements
+        function updateUI() {
+            // Update WPM estimate in real-time
+            if (state.isRunning && state.startTime && state.lastKeyPressTime) {
+                const timeElapsed = (state.lastKeyPressTime - state.startTime) / 60000; // in minutes
+                const wpmEstimate = Math.round((state.correctLetters / 5) / timeElapsed);
+                wpmElement.textContent = isFinite(wpmEstimate) ? wpmEstimate : 0;
+                
+                // Update accuracy in real-time
+                const totalLetters = state.correctLetters + state.incorrectLetters;
+                const accuracy = totalLetters > 0 ? 
+                    Math.round((state.correctLetters / totalLetters) * 100) : 100;
+                accuracyElement.textContent = `${accuracy}%`;
+            }
+            
+            // Update level progress display
+            levelElement.textContent = `Level ${state.level}`;
+            levelProgressElement.textContent = `${Math.round((state.levelProgress / state.levelTarget) * 100)}%`;
+            levelProgressElement.parentNode.style.background = 
+                `conic-gradient(var(--primary) ${(state.levelProgress / state.levelTarget) * 100}%, var(--light) 0%)`;
+        }
+
+        // Initialize the app
+        init();
+    </script>
+</body>
+</html>
