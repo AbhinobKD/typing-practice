@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>keysense</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Syne:wght@400;700;800&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #080808;
+  --surface: #111;
+  --border: #1c1c1c;
+  --text: #ddd;
+  --dim: #3a3a3a;
+  --dim2: #555;
+  --accent: #b8f050;
+  --wrong: #ff4060;
+  --correct: #40e8a0;
+  --cursor-col: #b8f050;
+}
+
+html, body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DM Mono', monospace;
+  overflow: hidden;
+  user-select: none;
+}
+
+body {
+  display: grid;
+  place-items: center;
+}
+
+/* ── layout ─────────────────────────────── */
+.shell {
+  width: min(720px, 92vw);
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* ── header ─────────────────────────────── */
+.top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 48px;
+}
+
+.logo {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 12px;
+  letter-spacing: 0.45em;
+  color: var(--accent);
+  text-transform: uppercase;
+}
+
+.metrics {
+  display: flex;
+  gap: 28px;
+}
+
+.metric {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+}
+
+.metric-val {
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  transition: color 0.3s;
+}
+
+.metric-val.hi { color: var(--accent); }
+
+.metric-lbl {
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  color: var(--dim2);
+  text-transform: uppercase;
+}
+
+/* ── mode indicator ─────────────────────── */
+
+.mode-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--dim2);
+  transition: background 0.4s;
+  flex-shrink: 0;
+}
+
+.mode-dot.targeting { background: var(--accent); animation: throb 2s ease infinite; }
+
+@keyframes throb {
+  0%,100% { box-shadow: 0 0 0 0 rgba(184,240,80,0); }
+  50%      { box-shadow: 0 0 0 4px rgba(184,240,80,0.2); }
+}
+
+.mode-text {
+  font-size: 10px;
+  letter-spacing: 0.25em;
+  color: var(--dim2);
+  text-transform: uppercase;
+  transition: color 0.4s;
+}
+
+.mode-text.targeting { color: var(--accent); }
+
+.weak-pills {
+  display: flex;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.weak-pill {
+  font-size: 11px;
+  padding: 2px 9px;
+  border-radius: 3px;
+  background: rgba(255,64,96,0.08);
+  border: 1px solid rgba(255,64,96,0.22);
+  color: var(--wrong);
+  letter-spacing: 0.15em;
+  animation: pill-in 0.3s ease;
+}
+
+@keyframes pill-in {
+  from { opacity:0; transform: scale(0.8); }
+  to   { opacity:1; transform: scale(1); }
+}
+
+/* ── typing area ─────────────────────────── */
+.typing-area {
+  position: relative;
+  cursor: text;
+}
+
+.words-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px 18px;
+  line-height: 1.3;
+  padding-bottom: 8px;
+}
+
+.word-el {
+  display: inline-flex;
+  position: relative;
+}
+
+.ch {
+  font-size: 26px;
+  color: var(--dim);
+  transition: color 0.08s;
+  position: relative;
+}
+
+.ch.correct  { color: var(--correct); }
+.ch.wrong    { color: var(--wrong); }
+.ch.active   { color: var(--text); }
+
+/* cursor beam on the active character */
+.ch.cursor::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 4px;
+  width: 2px;
+  height: calc(100% - 8px);
+  background: var(--cursor-col);
+  border-radius: 1px;
+  animation: blink 1s step-end infinite;
+}
+
+/* cursor after last char of word */
+.word-el.cursor-end::after {
+  content: '';
+  position: absolute;
+  right: -3px; top: 4px;
+  width: 2px;
+  height: calc(100% - 8px);
+  background: var(--cursor-col);
+  border-radius: 1px;
+  animation: blink 1s step-end infinite;
+}
+
+@keyframes blink {
+  0%,100% { opacity:1; } 50% { opacity:0; }
+}
+
+.hidden-input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+  width: 1px; height: 1px;
+  top: 0; left: 0;
+}
+
+/* ── caret / prompt ─────────────────────── */
+.prompt {
+  margin-top: 20px;
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  color: var(--dim2);
+  text-align: center;
+  transition: opacity 0.3s;
+}
+
+/* ── keyboard heatmap ───────────────────── */
+.kb-wrap {
+  margin-top: 52px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  align-items: center;
+}
+
+.kb-lbl {
+  font-size: 9px;
+  letter-spacing: 0.3em;
+  color: var(--dim2);
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.kb-row {
+  display: flex;
+  gap: 4px;
+}
+
+.kb-key {
+  width: 34px;
+  height: 30px;
+  border-radius: 4px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  color: var(--dim2);
+  transition: background 0.5s, border-color 0.5s, color 0.5s, box-shadow 0.5s;
+  position: relative;
+}
+
+.kb-key .acc-dot {
+  position: absolute;
+  bottom: 3px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: transparent;
+  transition: background 0.5s;
+}
+
+/* heat levels */
+.kb-key.h0  { /* untouched */ }
+.kb-key.h-great { background:#162410; border-color:#253c15; color:#80c840; }
+.kb-key.h-great .acc-dot { background: #80c840; }
+.kb-key.h-good  { background:#1a2c12; border-color:#2e4e1c; color:#a0de50; }
+.kb-key.h-good .acc-dot  { background: #a0de50; }
+.kb-key.h-ok    { background:#22360e; border-color:#3a5816; color:#b8f050; }
+.kb-key.h-ok .acc-dot    { background: #b8f050; }
+.kb-key.h-bad   {
+  background:#1e0810; border-color:#3a1020; color:#ff4060;
+  animation: pulse-bad 2s ease infinite;
+}
+.kb-key.h-bad .acc-dot   { background: #ff4060; }
+
+@keyframes pulse-bad {
+  0%,100% { box-shadow: 0 0 0 0 rgba(255,64,96,0); }
+  50%      { box-shadow: 0 0 6px 2px rgba(255,64,96,0.25); }
+}
+
+/* ── flash overlay ──────────────────────── */
+#flash {
+  position: fixed; inset: 0;
+  background: var(--accent);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.08s;
+}
+#flash.on { opacity: 0.05; }
+
+/* ── loading state ──────────────────────── */
+.loading-msg {
+  font-size: 12px;
+  color: var(--dim2);
+  letter-spacing: 0.2em;
+  text-align: center;
+  padding: 20px 0;
+  animation: fadepulse 1.2s ease infinite;
+}
+
+@keyframes fadepulse {
+  0%,100% { opacity:0.4; } 50% { opacity:1; }
+}
+
+.error-msg {
+  font-size: 11px;
+  color: var(--wrong);
+  letter-spacing: 0.15em;
+  text-align: center;
+  padding: 10px 0;
+}
+
+/* ── top controls row ───────────────────── */
+.top-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.mode-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 18px;
+  flex: 1;
+}
+
+.mode-switcher {
+  display: flex;
+  gap: 2px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 3px;
+}
+
+.ms-btn {
+  background: transparent;
+  border: none;
+  color: var(--dim2);
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  padding: 5px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+  text-transform: uppercase;
+}
+
+.ms-btn:hover { color: var(--text); }
+
+.ms-btn.active {
+  background: var(--border);
+  color: var(--accent);
+}
+</style>
+</head>
+<body>
+
+<div id="flash"></div>
+
+<div class="shell">
+
+  <div class="top-bar">
+    <div class="logo">keysense</div>
+    <div class="metrics">
+      <div class="metric">
+        <div class="metric-val" id="m-wpm">—</div>
+        <div class="metric-lbl">wpm</div>
+      </div>
+      <div class="metric">
+        <div class="metric-val" id="m-acc">—</div>
+        <div class="metric-lbl">acc</div>
+      </div>
+      <div class="metric">
+        <div class="metric-val" id="m-words">0</div>
+        <div class="metric-lbl">words</div>
+      </div>
+      <div class="metric">
+        <div class="metric-val" id="m-streak">0</div>
+        <div class="metric-lbl">streak</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="top-controls">
+    <div class="mode-row">
+      <div class="mode-dot" id="mode-dot"></div>
+      <div class="mode-text" id="mode-text">loading words…</div>
+      <div class="weak-pills" id="weak-pills"></div>
+    </div>
+    <div class="mode-switcher">
+      <button class="ms-btn active" id="ms-auto"   onmousedown="event.preventDefault()" onclick="switchMode('auto')">auto</button>
+      <button class="ms-btn"        id="ms-common" onmousedown="event.preventDefault()" onclick="switchMode('common')">common</button>
+      <button class="ms-btn"        id="ms-target" onmousedown="event.preventDefault()" onclick="switchMode('target')">target</button>
+    </div>
+  </div>
+
+  <div class="typing-area" id="typing-area">
+    <div class="words-wrap" id="words-wrap"></div>
+    <input class="hidden-input" id="hidden-input"
+      type="text" autocomplete="off" autocorrect="off"
+      autocapitalize="off" spellcheck="false">
+  </div>
+
+  <div class="prompt" id="prompt">click to begin</div>
+
+  <div class="kb-wrap">
+    <div class="kb-lbl">key accuracy</div>
+    <div id="keyboard"></div>
+  </div>
+
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════
+   CONFIGURATION
+═══════════════════════════════════════════════════ */
+const DATAMUSE = 'https://api.datamuse.com/words';
+const WORDS_PER_ROUND  = 14;
+const CACHE_PER_LETTER = 60;   // words cached per letter
+const WARMUP_ROUNDS    = 1;    // rounds before targeting begins
+const WEAK_THRESHOLD   = 0.88; // accuracy below this = weak
+const MIN_ATTEMPTS     = 3;    // min keystrokes before declaring weak
+
+/* ═══════════════════════════════════════════════════
+   KEYBOARD LAYOUT
+═══════════════════════════════════════════════════ */
+const ROWS = [
+  ['q','w','e','r','t','y','u','i','o','p'],
+  ['a','s','d','f','g','h','j','k','l'],
+  ['z','x','c','v','b','n','m']
+];
+const ALL_KEYS = ROWS.flat();
+
+/* ═══════════════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════════════ */
+let keyStats   = {};        // k -> { attempts, errors }
+let wordCache  = {};        // letter -> [word, …]
+let commonPool = [];        // generic word pool
+let words      = [];        // current round words
+let wordResult = [];        // per-word typed string
+let curWord    = 0;
+let curChar    = 0;
+let active     = false;
+let sessionStart = null;
+let totalChars = 0;
+let totalErrors= 0;
+let wordsDone  = 0;
+let streak     = 0;
+let rounds     = 0;
+let mode       = 'warmup';
+let userMode   = 'auto';   // 'auto' | 'common' | 'target'
+
+ALL_KEYS.forEach(k => keyStats[k] = { attempts: 0, errors: 0 });
+
+/* ═══════════════════════════════════════════════════
+   DOM REFERENCES
+═══════════════════════════════════════════════════ */
+const wordsWrap  = document.getElementById('words-wrap');
+const hiddenInput= document.getElementById('hidden-input');
+const typingArea = document.getElementById('typing-area');
+const prompt     = document.getElementById('prompt');
+const modeDot    = document.getElementById('mode-dot');
+const modeText   = document.getElementById('mode-text');
+const weakPills  = document.getElementById('weak-pills');
+const flash      = document.getElementById('flash');
+const mWpm       = document.getElementById('m-wpm');
+const mAcc       = document.getElementById('m-acc');
+const mWords     = document.getElementById('m-words');
+const mStreak    = document.getElementById('m-streak');
+
+/* ═══════════════════════════════════════════════════
+   DATAMUSE FETCHER
+   Fetches real English words, filtered to only a–z,
+   no spaces, 3–9 chars, sorted by frequency.
+═══════════════════════════════════════════════════ */
+async function fetchWords(params) {
+  const url = DATAMUSE + '?' + new URLSearchParams({ max: 250, md: 'f', ...params });
+  try {
+    const r = await fetch(url);
+    if (!r.ok) return [];
+    const data = await r.json();
+    return data
+      .filter(w => /^[a-z]{3,9}$/.test(w.word))
+      .sort((a, b) => {
+        // sort by frequency tag (f:N) descending
+        const fa = parseFloat((a.tags || []).find(t => t.startsWith('f:'))?.slice(2) || 0);
+        const fb = parseFloat((b.tags || []).find(t => t.startsWith('f:'))?.slice(2) || 0);
+        return fb - fa;
+      })
+      .map(w => w.word);
+  } catch { return []; }
+}
+
+async function primeCommonPool() {
+  // Use Google 10,000 most common English words (MIT licensed, no-swears variant)
+  // Source: github.com/first20hours/google-10000-english
+  const URL = 'https://raw.githubusercontent.com/first20hours/google-10000-english/master/google-10000-english-no-swears.txt';
+  try {
+    const r = await fetch(URL);
+    if (!r.ok) throw new Error('fetch failed');
+    const text = await r.text();
+    const all = text.split('\n')
+      .map(w => w.trim().toLowerCase())
+      .filter(w => /^[a-z]{3,9}$/.test(w)); // only clean alpha words, 3–9 chars
+    // The file is already sorted by frequency (most common first)
+    // Take top 2000 for the common pool — plenty of variety, all real common words
+    commonPool = all.slice(0, 2000);
+    console.log(`Common pool loaded: ${commonPool.length} words`);
+  } catch (err) {
+    console.warn('Failed to load word list, using fallback:', err);
+    // Fallback to Datamuse if GitHub is unreachable
+    const topics = ['daily','common','life','work','time','home','world'];
+    const batches = await Promise.all(topics.map(t => fetchWords({ topics: t })));
+    commonPool = shuffle([...new Set(batches.flat())]).slice(0, 400);
+    if (commonPool.length === 0) {
+      commonPool = ['the','and','for','are','but','not','you','all','can','was','her','has','him','how','new','old','get','set','run','try','use','day','way','now','any','ask','big','far','got','hit','hot','job','key','law','low','map','may','mix','pay','put','say','sir','ten','win','yet','about','after','again','along','every','first','found','group','heart','human','large','learn','light','local','music','never','often','other','place','power','right','serve','since','small','smart','smile','start','state','still','story','study','style','table','teach','think','three','touch','trade','train','trust','truth','under','value','voice','watch','water','where','which','while','whole','world','young','youth'];
+    }
+  }
+}
+
+async function primeLetterCache(letter) {
+  if (wordCache[letter] && wordCache[letter].length >= 10) return;
+  // Fetch words that START with or CONTAIN many of this letter
+  const [starts, contains] = await Promise.all([
+    fetchWords({ sp: letter + '*' }),
+    fetchWords({ sp: '*' + letter + '*' + letter + '*' }) // at least 2 occurrences
+  ]);
+  const combined = [...new Set([...starts, ...contains])];
+  wordCache[letter] = combined.slice(0, CACHE_PER_LETTER);
+}
+
+/* ═══════════════════════════════════════════════════
+   KEYBOARD HEATMAP
+═══════════════════════════════════════════════════ */
+function buildKeyboard() {
+  const kb = document.getElementById('keyboard');
+  kb.innerHTML = '';
+  const offsets = [0, 14, 28];
+  ROWS.forEach((row, ri) => {
+    const rowEl = document.createElement('div');
+    rowEl.className = 'kb-row';
+    rowEl.style.marginLeft = offsets[ri] + 'px';
+    row.forEach(k => {
+      const el = document.createElement('div');
+      el.className = 'kb-key h0';
+      el.id = 'kb-' + k;
+      el.innerHTML = `${k}<span class="acc-dot"></span>`;
+      rowEl.appendChild(el);
+    });
+    kb.appendChild(rowEl);
+  });
+}
+
+function updateKeyboard() {
+  ALL_KEYS.forEach(k => {
+    const el = document.getElementById('kb-' + k);
+    if (!el) return;
+    const s = keyStats[k];
+    if (s.attempts < 2) { el.className = 'kb-key h0'; return; }
+    const acc = 1 - s.errors / s.attempts;
+    if      (acc >= 0.96) el.className = 'kb-key h-great';
+    else if (acc >= 0.90) el.className = 'kb-key h-good';
+    else if (acc >= 0.82) el.className = 'kb-key h-ok';
+    else                  el.className = 'kb-key h-bad';
+  });
+}
+
+/* ═══════════════════════════════════════════════════
+   WEAK KEY ANALYSIS
+═══════════════════════════════════════════════════ */
+function getWeakKeys() {
+  return ALL_KEYS
+    .filter(k => keyStats[k].attempts >= MIN_ATTEMPTS)
+    .map(k => ({ k, acc: 1 - keyStats[k].errors / keyStats[k].attempts }))
+    .sort((a, b) => a.acc - b.acc)
+    .filter(x => x.acc < WEAK_THRESHOLD)
+    .slice(0, 3)
+    .map(x => x.k);
+}
+
+/* ═══════════════════════════════════════════════════
+   WORD SELECTION
+═══════════════════════════════════════════════════ */
+async function pickWords() {
+  // ── COMMON mode: always use frequency-sorted common pool ──
+  if (userMode === 'common') {
+    mode = 'common';
+    setModeUI('common words', false, []);
+    return shuffle(commonPool).slice(0, WORDS_PER_ROUND);
+  }
+
+  const weak = getWeakKeys();
+
+  // ── TARGET mode: always target weak keys (or common if none yet) ──
+  if (userMode === 'target') {
+    if (weak.length === 0) {
+      mode = 'common';
+      setModeUI('no weak keys yet — keep typing', false, []);
+      return shuffle(commonPool).slice(0, WORDS_PER_ROUND);
+    }
+    mode = 'targeting';
+    await Promise.all(weak.map(k => primeLetterCache(k)));
+    let pool = [];
+    weak.forEach(k => pool.push(...(wordCache[k] || [])));
+    pool = [...new Set(pool)];
+    if (pool.length < WORDS_PER_ROUND) pool.push(...shuffle(commonPool));
+    setModeUI('targeting', true, weak);
+    return shuffle([...new Set(pool)]).slice(0, WORDS_PER_ROUND);
+  }
+
+  // ── AUTO mode: warmup first, then smart switching ──
+  if (rounds < WARMUP_ROUNDS || weak.length === 0) {
+    mode = 'warmup';
+    setModeUI('warming up', false, []);
+    return shuffle(commonPool).slice(0, WORDS_PER_ROUND);
+  }
+
+  mode = 'targeting';
+  await Promise.all(weak.map(k => primeLetterCache(k)));
+  let pool = [];
+  weak.forEach(k => pool.push(...(wordCache[k] || [])));
+  pool = [...new Set(pool)];
+  if (pool.length < WORDS_PER_ROUND) pool.push(...shuffle(commonPool));
+  setModeUI('targeting', true, weak);
+  return shuffle([...new Set(pool)]).slice(0, WORDS_PER_ROUND);
+}
+
+/* ═══════════════════════════════════════════════════
+   MODE UI
+═══════════════════════════════════════════════════ */
+function setModeUI(label, targeting, weakKeys) {
+  modeText.textContent = label;
+  modeText.className   = 'mode-text' + (targeting ? ' targeting' : '');
+  modeDot.className    = 'mode-dot'  + (targeting ? ' targeting' : '');
+  weakPills.innerHTML  = weakKeys.map(k =>
+    `<div class="weak-pill">${k}</div>`
+  ).join('');
+}
+
+/* ═══════════════════════════════════════════════════
+   RENDER
+═══════════════════════════════════════════════════ */
+function render() {
+  wordsWrap.innerHTML = '';
+  words.forEach((word, wi) => {
+    const wordEl = document.createElement('div');
+    wordEl.className = 'word-el';
+    wordEl.id = 'w-' + wi;
+
+    const typed = wordResult[wi] || '';
+
+    // if this is current word and we've typed past all chars (cursor at end)
+    const isCurrentWord = wi === curWord;
+    const pastEnd = isCurrentWord && curChar >= word.length;
+
+    word.split('').forEach((ch, ci) => {
+      const span = document.createElement('span');
+      span.className = 'ch';
+      span.id = `c-${wi}-${ci}`;
+      span.textContent = ch;
+
+      if (typed[ci] !== undefined) {
+        span.classList.add(typed[ci] === ch ? 'correct' : 'wrong');
+      } else if (isCurrentWord && ci === curChar) {
+        span.classList.add('cursor');
+      }
+      wordEl.appendChild(span);
+    });
+
+    if (pastEnd) wordEl.classList.add('cursor-end');
+    wordsWrap.appendChild(wordEl);
+  });
+}
+
+function patchChar(wi, ci, correct) {
+  const el = document.getElementById(`c-${wi}-${ci}`);
+  if (!el) return;
+  el.className = 'ch ' + (correct ? 'correct' : 'wrong');
+}
+
+function moveCursor() {
+  // clear old cursor
+  document.querySelectorAll('.ch.cursor').forEach(e => e.classList.remove('cursor'));
+  document.querySelectorAll('.word-el.cursor-end').forEach(e => e.classList.remove('cursor-end'));
+
+  if (curChar < (words[curWord] || '').length) {
+    const el = document.getElementById(`c-${curWord}-${curChar}`);
+    if (el) el.classList.add('cursor');
+  } else {
+    const wordEl = document.getElementById('w-' + curWord);
+    if (wordEl) wordEl.classList.add('cursor-end');
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   INPUT HANDLING
+═══════════════════════════════════════════════════ */
+hiddenInput.addEventListener('input', () => {
+  if (!active) return;
+  if (!sessionStart) sessionStart = Date.now();
+
+  const val = hiddenInput.value;
+  const word = words[curWord];
+
+  // SPACE → advance word
+  if (val.endsWith(' ') || val === ' ') {
+    const typed = val.trim();
+    if (typed.length === 0) { hiddenInput.value = ''; return; } // ignore accidental space at start
+
+    wordResult[curWord] = typed;
+
+    // Score every character position in the target word
+    word.split('').forEach((ch, ci) => {
+      keyStats[ch].attempts++;
+      if (typed[ci] !== ch) keyStats[ch].errors++;
+    });
+
+    const correct = typed === word;
+    if (correct) { streak++; } else { streak = 0; }
+    wordsDone++;
+    totalChars += typed.length + 1;
+    if (!correct) totalErrors += Math.abs(typed.length - word.length) +
+      word.split('').filter((c,i) => typed[i] !== c).length;
+
+    // render typed word result
+    word.split('').forEach((ch, ci) => {
+      patchChar(curWord, ci, typed[ci] === ch);
+    });
+
+    curWord++;
+    curChar = 0;
+    hiddenInput.value = '';
+
+    updateMetrics();
+    updateKeyboard();
+
+    if (curWord >= words.length) {
+      endRound();
+      return;
+    }
+    moveCursor();
+    return;
+  }
+
+  // Live typing within word
+  wordResult[curWord] = val;
+  curChar = val.length;
+
+  word.split('').forEach((ch, ci) => {
+    const typedCh = val[ci];
+    const el = document.getElementById(`c-${curWord}-${ci}`);
+    if (!el) return;
+    if (typedCh === undefined) {
+      el.className = 'ch';
+    } else {
+      el.className = 'ch ' + (typedCh === ch ? 'correct' : 'wrong');
+    }
+  });
+
+  moveCursor();
+});
+
+hiddenInput.addEventListener('keydown', e => {
+  // Prevent cursor keys from shifting focus
+  if (['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key)) e.preventDefault();
+});
+
+/* ═══════════════════════════════════════════════════
+   METRICS
+═══════════════════════════════════════════════════ */
+function updateMetrics() {
+  const mins = sessionStart ? (Date.now() - sessionStart) / 60000 : 0;
+  const wpm  = mins > 0 ? Math.round((totalChars / 5) / mins) : 0;
+  const acc  = totalChars > 0
+    ? Math.round(((totalChars - totalErrors) / totalChars) * 100)
+    : 100;
+
+  mWpm.textContent    = wpm  || '—';
+  mAcc.textContent    = acc  + '%';
+  mWords.textContent  = wordsDone;
+  mStreak.textContent = streak;
+
+  mWpm.className   = 'metric-val' + (wpm > 40 ? ' hi' : '');
+  mAcc.className   = 'metric-val' + (acc > 95 ? ' hi' : '');
+  mStreak.className= 'metric-val' + (streak > 5 ? ' hi' : '');
+}
+
+/* ═══════════════════════════════════════════════════
+   ROUND MANAGEMENT
+═══════════════════════════════════════════════════ */
+async function endRound() {
+  rounds++;
+  flashScreen();
+  setModeUI('loading next round…', false, []);
+  words = await pickWords();
+  wordResult = new Array(words.length).fill('');
+  curWord = 0;
+  curChar = 0;
+  hiddenInput.value = '';
+  render();
+  if (active) hiddenInput.focus();
+
+  // Pre-fetch next weak keys in background
+  const nextWeak = getWeakKeys();
+  nextWeak.forEach(k => primeLetterCache(k));
+}
+
+function flashScreen() {
+  flash.className = 'flash on';
+  setTimeout(() => flash.className = 'flash', 110);
+}
+
+/* ═══════════════════════════════════════════════════
+   FOCUS
+═══════════════════════════════════════════════════ */
+typingArea.addEventListener('click', activate);
+document.addEventListener('keydown', e => {
+  if (!active && e.key.length === 1) activate();
+});
+
+function activate() {
+  hiddenInput.focus();
+  active = true;
+  prompt.style.opacity = '0';
+}
+
+hiddenInput.addEventListener('blur', () => {
+  if (active) {
+    prompt.textContent = 'click to resume';
+    prompt.style.opacity = '1';
+  }
+});
+
+/* ═══════════════════════════════════════════════════
+   UTILS
+═══════════════════════════════════════════════════ */
+function shuffle(a) {
+  const b = [...a];
+  for (let i = b.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [b[i], b[j]] = [b[j], b[i]];
+  }
+  return b;
+}
+
+/* ═══════════════════════════════════════════════════
+   MODE SWITCHING
+═══════════════════════════════════════════════════ */
+async function switchMode(m) {
+  if (userMode === m) return;
+  userMode = m;
+
+  // update button styles
+  ['auto','common','target'].forEach(id => {
+    const btn = document.getElementById('ms-' + id);
+    btn.className = 'ms-btn' + (id === m ? ' active' : '');
+  });
+
+  // immediately load new round in the chosen mode
+  setModeUI('loading…', false, []);
+  words = await pickWords();
+  wordResult = new Array(words.length).fill('');
+  curWord = 0; curChar = 0;
+  hiddenInput.value = '';
+  render();
+  if (active) hiddenInput.focus();
+}
+
+/* ═══════════════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════════════ */
+async function init() {
+  buildKeyboard();
+  setModeUI('loading words…', false, []);
+
+  // Show loading in words area
+  wordsWrap.innerHTML = '<div class="loading-msg">loading google 10k word list…</div>';
+
+  await primeCommonPool();
+
+  words = shuffle(commonPool).slice(0, WORDS_PER_ROUND);
+  wordResult = new Array(words.length).fill('');
+
+  setModeUI('warming up', false, []);
+  render();
+  prompt.textContent = 'click to begin — or just start typing';
+
+  // pre-cache all letters silently in background
+  const primeQueue = [...ALL_KEYS];
+  const primeNext = async () => {
+    if (primeQueue.length === 0) return;
+    const k = primeQueue.shift();
+    await primeLetterCache(k);
+    setTimeout(primeNext, 150); // stagger to avoid rate limits
+  };
+  setTimeout(primeNext, 2000);
+}
+
+init();
+</script>
+</body>
+</html>
